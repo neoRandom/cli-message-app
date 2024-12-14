@@ -18,5 +18,5 @@ Made with Python 3.13, no use of third-party libraries.
 - Send some messages from the client side and see the logs on the host side
 
 ### Exiting
-- Send "CLOSE_CONNECTION" from the client side to end the connection
-- Input "STOP_SERVER" on the HOST panel to properly stop the server
+- Send `CLOSE_CONNECTION` from the client side to end the connection
+- Input `STOP_SERVER` on the HOST panel to properly stop the server
