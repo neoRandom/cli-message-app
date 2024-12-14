@@ -6,11 +6,11 @@ class Server(socket.socket):
     def __init__(
             self, 
             family: socket.AddressFamily | int = -1,
-            type: socket.SocketKind | int = -1,
+            type_: socket.SocketKind | int = -1,
             proto: int = -1,
             fileno: int | None = None
         ):   
-        super().__init__(family, type, proto, fileno)
+        super().__init__(family, type_, proto, fileno)
 
     def accept(self):
         client_socket, client_address = super().accept()
