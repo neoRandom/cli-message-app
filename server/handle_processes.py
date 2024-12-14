@@ -27,14 +27,14 @@ def add_worker(
 
 def monitor_processes():
     while True:
-        with process_lock:  # Lock to safely iterate over the shared dictionary
+        with process_lock:
             for name, process in list(process_dict.items()):
                 if not process.is_alive():  # Check if the process is still running
-                    process.join()  # Ensure resources are cleaned up
+                    process.join()          # Ensure resources are cleaned up
                     del process_dict[name]  # Remove finished process from the dictionary
-        time.sleep(0.5)  # Avoid busy-waiting with a small delay
+        time.sleep(0.5)
 
-        # Exit condition (optional): Stop monitoring if no processes exist
+        # Exit condition: The server is not running anymore
         with server_running.get_lock():
             if not server_running.value:
                 break
@@ -57,7 +57,8 @@ def handle_processes(server: Server, lock: multiprocessing.synchronize.Lock):
             last_id += 1
         except:
             pass  # TODO: Improve
-
+        
+        # Exit condition: The server is not running anymore
         with server_running.get_lock():
             if not server_running.value:
                 break
@@ -78,6 +79,7 @@ def handle_client(lock: multiprocessing.synchronize.Lock, connection: Connection
                 
                 async_log(lock, received)
 
+            # Exit condition: The server is not running anymore
             with server_running.get_lock():
                 if not server_running.value:
                     break
