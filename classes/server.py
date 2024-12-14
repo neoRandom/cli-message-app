@@ -3,8 +3,14 @@ import socket
 
 
 class Server(socket.socket):
-    def __init__(self, *args, **kwargs):   # type: ignore
-        super().__init__(*args, **kwargs)  # type: ignore
+    def __init__(
+            self, 
+            family: socket.AddressFamily | int = -1,
+            type: socket.SocketKind | int = -1,
+            proto: int = -1,
+            fileno: int | None = None
+        ):   
+        super().__init__(family, type, proto, fileno)
 
     def accept(self):
         client_socket, client_address = super().accept()
