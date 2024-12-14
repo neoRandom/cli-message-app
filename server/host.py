@@ -1,6 +1,6 @@
 from config.settings import HOST_ADDRESS
 from classes.server import Server
-from log.log_server import LogServer
+from log import log_server
 from server.handle_processes import handle_processes
 from server.handle_input import handle_host_input
 import socket
@@ -20,7 +20,7 @@ def run():
         # Get the process locker
         lock = multiprocessing.Lock()
 
-        LogServer.start()  # Starting the Log Server (terminal)
+        log_server.start()  # Starting the Log Server (terminal)
         
         # Start the processes
         # It needs both to the input not block the server-related processes and vice-versa
@@ -33,4 +33,4 @@ def run():
         handle_processes_process.join()
         handle_host_input_process.join()
 
-        LogServer.stop()  # Stopping/closing the Log Server
+        log_server.stop()  # Stopping/closing the Log Server

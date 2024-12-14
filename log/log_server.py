@@ -5,35 +5,40 @@ import socket
 import os
 
 
-class LogServer:
-    __running = False
-    __log_connection: Connection | None = None
+__running = False
+__log_connection: Connection | None = None
 
-    @staticmethod
-    def start():
-        if not LogServer.__running:
-            os.system(f"gnome-terminal -- bash -c 'python3 -m log.run_log_server'")
-            sleep(1)
-            LogServer.__log_connection = Connection(socket.AF_INET, socket.SOCK_STREAM)
-            LogServer.__log_connection.connect(LOG_ADDRESS)
-            LogServer.__running = True
-        else:
-            print("Server already running")
 
-    @staticmethod
-    def send(message: str = ""):
-        if LogServer.__log_connection is not None:
-            if message == LOG_STOP_COMMAND:
-                LogServer.stop()
-            else:
-                LogServer.__log_connection.send_decoded(message)
+def start():
+    global __running, __log_connection
+
+    if not __running:
+        os.system(f"gnome-terminal -- bash -c 'python3 -m log.run_log_server'")
+        sleep(1)
+        __log_connection = Connection(socket.AF_INET, socket.SOCK_STREAM)
+        __log_connection.connect(LOG_ADDRESS)
+        __running = True
+    else:
+        print("Server already running")
+
+
+def send(message: str = ""):
+    global __log_connection
     
-    @staticmethod
-    def stop():
-        if LogServer.__log_connection is not None:
-            LogServer.__log_connection.send_decoded(LOG_STOP_COMMAND)
-            LogServer.__log_connection.close()
-            LogServer.__log_connection = None
-            LogServer.__running = False
+    if __log_connection is not None:
+        if message == LOG_STOP_COMMAND:
+            stop()
         else:
-            print("Server already stopped")
+            __log_connection.send_decoded(message)
+
+
+def stop():
+    global __running, __log_connection
+
+    if __log_connection is not None:
+        __log_connection.send_decoded(LOG_STOP_COMMAND)
+        __log_connection.close()
+        __log_connection = None
+        __running = False
+    else:
+        print("Server already stopped")

@@ -2,7 +2,7 @@ from config.settings import DISCONNECT_COMMAND, MAX_PROCESS_COUNT
 from server.settings import server_running
 from classes.server import Server
 from classes.connection import Connection
-from log.log_server import LogServer
+from log import log_server
 import multiprocessing
 import multiprocessing.synchronize
 import threading
@@ -47,6 +47,7 @@ def handle_processes(server: Server, lock: multiprocessing.synchronize.Lock):
     last_id = 0
 
     while True:
+        # This try-except is needed to the server.accept end (timeout exception)
         try:
             conn, addr = server.accept()
 
@@ -92,5 +93,5 @@ def async_log(
         message: str
     ):
     lock.acquire()
-    LogServer.send(message)
+    log_server.send(message)
     lock.release()
