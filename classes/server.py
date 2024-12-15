@@ -1,4 +1,5 @@
 from classes.connection import Connection
+from classes.dataclasses import Address
 import socket
 
 
@@ -26,7 +27,13 @@ class Server(socket.socket):
             fileno=fd
         )
 
+        # Create a Address
+        new_addr = Address(
+            client_address[0],
+            client_address[1]
+        )
+
         return (
             new_conn, 
-            client_address
+            new_addr
         )

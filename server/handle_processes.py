@@ -1,4 +1,5 @@
-from config.settings import DISCONNECT_COMMAND, MAX_PROCESS_COUNT
+from classes.dataclasses import Address, Client
+from config.settings import CONNECTED_COMMAND, DISCONNECT_COMMAND, MAX_PROCESS_COUNT
 from server.settings import server_running
 from classes.server import Server
 from classes.connection import Connection
@@ -9,7 +10,7 @@ import threading
 import time
 
 
-process_dict: dict[int, multiprocessing.Process] = {}
+process_dict: dict[int, Client] = {}
 process_lock = threading.Lock()
 
 
@@ -17,20 +18,20 @@ def add_worker(
         process_id: int, 
         lock: multiprocessing.synchronize.Lock, 
         connection: Connection, 
-        address: tuple[str, int]
+        address: Address
     ):
     process = multiprocessing.Process(target=handle_client, args=(lock, connection, address))
     process.start()
     with process_lock:  # Lock to safely modify the shared dictionary
-        process_dict[process_id] = process
+        process_dict[process_id] = Client(connection, process)
 
 
 def monitor_processes():
     while True:
         with process_lock:
-            for name, process in list(process_dict.items()):
-                if not process.is_alive():  # Check if the process is still running
-                    process.join()          # Ensure resources are cleaned up
+            for name, client in list(process_dict.items()):
+                if not client.process.is_alive():  # Check if the process is still running
+                    client.process.join()          # Ensure resources are cleaned up
                     del process_dict[name]  # Remove finished process from the dictionary
         time.sleep(0.5)
 
@@ -67,25 +68,41 @@ def handle_processes(server: Server, lock: multiprocessing.synchronize.Lock):
     monitoring_thread.join()
 
 
-def handle_client(lock: multiprocessing.synchronize.Lock, connection: Connection, address: tuple[str, int]):
+def handle_client(lock: multiprocessing.synchronize.Lock, connection: Connection, address: Address):
     with connection:
-        async_log(lock, f"Connected with {address[0]}:{address[1]}")
+        async_log(lock, f"Connected with {address.host}:{address.port}")
+
+        nickname = connection.recv_decoded()
+
+        if not nickname:
+            async_log(lock, f"{address.host}:{address.port} did not send a nickname")
+            connection.send_decoded("Error: A nickname is required to connect")
+            return
+        else:
+            connection.send_decoded(CONNECTED_COMMAND)
 
         while True:
-            received = connection.recv_decoded()
+            message = connection.recv_decoded()
 
-            if received:
-                if received == DISCONNECT_COMMAND:
+            if message:
+                if message == DISCONNECT_COMMAND:
                     break
                 
-                async_log(lock, received)
+                broadcast(connection, f"{nickname}: {message}")
+                async_log(lock, f"{nickname}: {message}")
 
             # Exit condition: The server is not running anymore
             with server_running.get_lock():
                 if not server_running.value:
                     break
         
-        async_log(lock, f"{address[0]}:{address[1]} disconnected")
+        async_log(lock, f"{address.host}:{address.port} disconnected")
+
+
+def broadcast(sender: Connection, message: str):
+    with process_lock:
+        for _, client in list(process_dict.items()):
+            client.connection.send_decoded(message)
 
 
 def async_log(
